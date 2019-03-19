@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="${basepkg}.dao.${className}Dao">
+	<resultMap id="BaseResultMap" type="$!{basepkg}.entity.$!{className}">
+#foreach($item in $!{columnDatas})
+#if ($item.isPK)
+	<id property="$item.fieldName" column="$!item.columnName" jdbcType="$item.jdbcType"/>
+#else
+	<result property="$item.fieldName" column="$!item.columnName" jdbcType="$item.jdbcType"/>
+#end
+#end
+	</resultMap>
+	
+	<sql id="Fuzzy_Where_Clause">
+		<where>
+#foreach($item in $!{columnDatas})
+#if ($item.isPK)
+#else
+#if ($item.fieldName != "id" && $item.fieldName != "sortNum" && $item.fieldName != "magicId" && $item.fieldName != "createUser" && $item.fieldName != "isDeleted" && $item.fieldName != "createdTime" && $item.fieldName != "updatedTime")
+			<if test='$item.fieldName != null and $item.fieldName != ""'>
+				and $!item.columnName like concat('%',#{$item.fieldName,jdbcType=$item.jdbcType},'%')
+			</if>
+#end
+#end
+#end
+		</where>
+	</sql>
+	<sql id="Base_Where_Clause">
+		<where>
+#foreach($item in $!{columnDatas})
+#if ($item.isPK)
+#else
+			<if test='$item.fieldName != null and $item.fieldName != ""'>
+				and $!item.columnName=#{$item.fieldName,jdbcType=$item.jdbcType}
+			</if>
+#end
+#if ($item.columnName=="MAGIC_ID")
+			<if test="magicIds != null and magicIds.size()>0">
+				and MAGIC_ID in 
+				<foreach item="item" index="index" collection="magicIds" open="("
+					separator="," close=")">
+						#{item,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+#end
+#if ($item.columnName=="ORGANIZE_MAGIC_ID")
+			<if test="organizeMagicIds != null and organizeMagicIds.size()>0">
+				and ORGANIZE_MAGIC_ID in 
+				<foreach item="item" index="index" collection="organizeMagicIds" open="("
+					separator="," close=")">
+						#{item,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+#end
+#if ($item.columnName=="ORG_MAGIC_ID")
+			<if test="orgMagicIds != null and orgMagicIds.size()>0">
+				and ORG_MAGIC_ID in 
+				<foreach item="item" index="index" collection="orgMagicIds" open="("
+					separator="," close=")">
+						#{item,jdbcType=VARCHAR}
+				</foreach>
+			</if>
+#end
+#end
+			<if test="whereSql != null">
+				${whereSql}
+			</if>
+			<if test="timeBetweenCondition != null">
+                and ${timeColumn} between str_to_date(#{queryStartTime},'%Y-%m-%d %H:%i:%s') and str_to_date(#{queryEndTime},'%Y-%m-%d %H:%i:%s')
+            </if>
+		</where>
+	</sql>
+	<sql id="Base_Column_List" >
+    	#foreach($item in $!{columnDatas})$!item.columnName#if($!{velocityCount} != $!{columnDatas.size()}),#end#end
+    	
+  	</sql>
+  	
+  	<!-- 根据主键查询-->
+  	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="${pk.keyJavaType}" >
+	    select 
+	    <include refid="Base_Column_List" />
+	    from ${tableName}
+	    where ${pk.keyName} = #{$pk.keyFieldName}
+  	</select>
+
+  	
+  	<!-- 根据条件查询单条-->
+  	<select id="selectOne" resultMap="BaseResultMap" parameterType="map" >
+	    select 
+	    <include refid="Base_Column_List" />
+	    from ${tableName}
+	    <include refid="Base_Where_Clause"/>
+	    limit 1
+  	</select>
+  	
+  	<!-- 根据参数查询列表-->
+  	<select id="find" resultMap="BaseResultMap" parameterType="map" >
+		SELECT * FROM ${tableName}
+		<include refid="Base_Where_Clause"/>
+		<if test="orderBySql != null">
+			ORDER BY ${orderBySql}
+		</if>
+		<if test="orderBySql == null">
+			ORDER BY ${pk.keyName} DESC
+		</if>
+		<if test="limitCondition != null">
+			${limitCondition}
+		</if>
+	</select>
+	
+	<!-- 根据参数模糊查询列表-->
+  	<select id="fuzzy" resultMap="BaseResultMap" parameterType="map" >
+		SELECT * FROM ${tableName}
+		<include refid="Fuzzy_Where_Clause"/>
+		<if test="orderBySql != null">
+			ORDER BY ${orderBySql}
+		</if>
+		<if test="orderBySql == null">
+			ORDER BY ${pk.keyName} DESC
+		</if>
+		<if test="limitCondition != null">
+			${limitCondition}
+		</if>
+	</select>
+	
+	<!-- 按照主键物理删除-->
+	<delete id="deleteByPrimaryKey" parameterType="${pk.keyJavaType}">
+		DELETE FROM ${tableName} 
+		WHERE
+		${pk.keyName}=#{$pk.keyFieldName}
+	</delete>
+	
+	<!-- 根据条件批量物理删除-->
+	<delete id="deleteByMap" parameterType="map">
+		DELETE FROM ${tableName} 
+		<include refid="Base_Where_Clause"/>
+	</delete>
+
+	<!-- 按照主键逻辑删除-->
+	<update id="logicDeleteByPrimaryKey" parameterType="${pk.keyJavaType}">
+		UPDATE ${tableName}
+		set isDeleted = "Y"
+		WHERE
+		${pk.keyName}=#{$pk.keyFieldName}
+	</update>
+
+	<!-- 根据条件批量逻辑删除-->
+	<update id="logicDeleteByMap" parameterType="map">
+		UPDATE ${tableName}
+		set isDeleted = "Y"
+		<include refid="Base_Where_Clause"/>
+	</update>
+	
+	<!-- 添加-->
+	<insert id="insert" parameterType="$!{basepkg}.entity.$!{className}" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO ${tableName}
+			(#foreach($item in $!{columnDatas})$!item.columnName#if($!{velocityCount} != $!{columnDatas.size()}),#end#end)
+		VALUES 
+			(#foreach($item in $!{columnDatas})#if ($item.fieldName == "sortNum")(SELECT IFNULL(MAX(TM.SORT_NUM),0)+1 FROM ${tableName} TM)#else#{$item.fieldName,jdbcType=$item.jdbcType}#end#if($!{velocityCount} != $!{columnDatas.size()}),#end#end)
+	</insert>
+
+	<!-- 批量添加-->
+	<insert id="batchInsert" parameterType="java.util.List">
+		INSERT INTO ${tableName}
+			(#foreach($item in $!{columnDatas})#if ($item.fieldName != "id")$!item.columnName#if($!{velocityCount} != $!{columnDatas.size()}),#end#end#end)
+		VALUES 
+			<foreach item="record" index="index" collection="list" separator="," >
+				(#foreach($item in $!{columnDatas})#if ($item.fieldName != "id")#if ($item.fieldName == "sortNum")(SELECT IFNULL(MAX(TM.SORT_NUM),0)+1 FROM ${tableName} TM)#else#{record.$item.fieldName,jdbcType=$item.jdbcType}#end#if($!{velocityCount} != $!{columnDatas.size()}),#end#end#end)
+            </foreach>
+	</insert>
+	
+	<!-- 按填入值添加-->
+	<insert id="insertSelective" parameterType="$!{basepkg}.entity.$!{className}" useGeneratedKeys="true" keyProperty="id">
+	    insert into ${tableName}
+	    <trim prefix="(" suffix=")" suffixOverrides="," >
+#foreach($item in $!{columnDatas})
+			<if test="$item.fieldName != null" >
+				$!item.columnName,
+			</if>
+#end
+		</trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides="," >
+#foreach($item in $!{columnDatas})
+#if ($item.fieldName == "sortNum")
+			<if test="$item.fieldName != null" >
+				(SELECT IFNULL(MAX(TM.SORT_NUM),0)+1 FROM ${tableName} TM),
+			</if>
+#else
+			<if test="$item.fieldName != null" >
+				#{$item.fieldName,jdbcType=$item.jdbcType},
+			</if>
+#end
+#end
+		</trim>
+  	</insert>
+
+	
+  	<!-- 根据主键按有值更新-->
+  	<update id="updateByPrimaryKey" parameterType="$!{basepkg}.entity.$!{className}">
+		UPDATE ${tableName}
+		<set>
+#foreach($item in $!{columnDatas})
+#if ($item.isPK)
+#else
+			<if test="$item.fieldName != null ">
+				$!item.columnName=#{$item.fieldName,jdbcType=$item.jdbcType}#if($!{velocityCount} != $!{columnDatas.size()}),#end
+				
+			</if>
+#end
+#end
+		</set>
+		WHERE
+		${pk.keyName}=#{$pk.keyFieldName}
+	</update>
+  	
+	<!-- 查询总数-->
+	<select id="countAll" resultType="int">
+    	select count(1) from ${tableName}
+		<include refid="Base_Where_Clause"/>    	
+    </select>
+    
+    <!-- 根据map查询总数-->
+	<select id="countByMap" resultType="int"  parameterType="java.util.Map">
+		select count(1) from ${tableName}
+		<include refid="Base_Where_Clause"/>
+	</select>
+	
+</mapper>

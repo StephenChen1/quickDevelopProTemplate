@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.stephenchen.study.dao.TipsDao">
+	<resultMap id="BaseResultMap" type="cn.stephenchen.study.entity.Tips">
+	<id property="id" column="id" jdbcType="INTEGER"/>
+	<result property="name" column="name" jdbcType="VARCHAR"/>
+	<result property="content" column="content" jdbcType="VARCHAR"/>
+	<result property="createTime" column="createTime" jdbcType="TIMESTAMP"/>
+	<result property="modifyTime" column="modifyTime" jdbcType="TIMESTAMP"/>
+	<result property="createUser" column="createUser" jdbcType="INTEGER"/>
+	<result property="modifyUser" column="modifyUser" jdbcType="INTEGER"/>
+	<result property="isDeleted" column="isDeleted" jdbcType="VARCHAR"/>
+	</resultMap>
+	
+	<sql id="Fuzzy_Where_Clause">
+		<where>
+			<if test='name != null and name != ""'>
+				and name like concat('%',#{name,jdbcType=VARCHAR},'%')
+			</if>
+			<if test='content != null and content != ""'>
+				and content like concat('%',#{content,jdbcType=VARCHAR},'%')
+			</if>
+			<if test='createTime != null and createTime != ""'>
+				and createTime like concat('%',#{createTime,jdbcType=TIMESTAMP},'%')
+			</if>
+			<if test='modifyTime != null and modifyTime != ""'>
+				and modifyTime like concat('%',#{modifyTime,jdbcType=TIMESTAMP},'%')
+			</if>
+			<if test='modifyUser != null and modifyUser != ""'>
+				and modifyUser like concat('%',#{modifyUser,jdbcType=INTEGER},'%')
+			</if>
+		</where>
+	</sql>
+	<sql id="Base_Where_Clause">
+		<where>
+			<if test='name != null and name != ""'>
+				and name=#{name,jdbcType=VARCHAR}
+			</if>
+			<if test='content != null and content != ""'>
+				and content=#{content,jdbcType=VARCHAR}
+			</if>
+			<if test='createTime != null and createTime != ""'>
+				and createTime=#{createTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test='modifyTime != null and modifyTime != ""'>
+				and modifyTime=#{modifyTime,jdbcType=TIMESTAMP}
+			</if>
+			<if test='createUser != null and createUser != ""'>
+				and createUser=#{createUser,jdbcType=INTEGER}
+			</if>
+			<if test='modifyUser != null and modifyUser != ""'>
+				and modifyUser=#{modifyUser,jdbcType=INTEGER}
+			</if>
+			<if test='isDeleted != null and isDeleted != ""'>
+				and isDeleted=#{isDeleted,jdbcType=VARCHAR}
+			</if>
+			<if test="whereSql != null">
+				${whereSql}
+			</if>
+			<if test="timeBetweenCondition != null">
+                and ${timeColumn} between str_to_date(#{queryStartTime},'%Y-%m-%d %H:%i:%s') and str_to_date(#{queryEndTime},'%Y-%m-%d %H:%i:%s')
+            </if>
+		</where>
+	</sql>
+	<sql id="Base_Column_List" >
+    	id,name,content,createTime,modifyTime,createUser,modifyUser,isDeleted    	
+  	</sql>
+  	
+  	<!-- 根据主键查询-->
+  	<select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+	    select 
+	    <include refid="Base_Column_List" />
+	    from tips
+	    where id = #{id}
+  	</select>
+
+  	
+  	<!-- 根据条件查询单条-->
+  	<select id="selectOne" resultMap="BaseResultMap" parameterType="map" >
+	    select 
+	    <include refid="Base_Column_List" />
+	    from tips
+	    <include refid="Base_Where_Clause"/>
+	    limit 1
+  	</select>
+  	
+  	<!-- 根据参数查询列表-->
+  	<select id="find" resultMap="BaseResultMap" parameterType="map" >
+		SELECT * FROM tips
+		<include refid="Base_Where_Clause"/>
+		<if test="orderBySql != null">
+			ORDER BY ${orderBySql}
+		</if>
+		<if test="orderBySql == null">
+			ORDER BY id DESC
+		</if>
+		<if test="limitCondition != null">
+			${limitCondition}
+		</if>
+	</select>
+	
+	<!-- 根据参数模糊查询列表-->
+  	<select id="fuzzy" resultMap="BaseResultMap" parameterType="map" >
+		SELECT * FROM tips
+		<include refid="Fuzzy_Where_Clause"/>
+		<if test="orderBySql != null">
+			ORDER BY ${orderBySql}
+		</if>
+		<if test="orderBySql == null">
+			ORDER BY id DESC
+		</if>
+		<if test="limitCondition != null">
+			${limitCondition}
+		</if>
+	</select>
+	
+	<!-- 按照主键物理删除-->
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		DELETE FROM tips 
+		WHERE
+		id=#{id}
+	</delete>
+	
+	<!-- 根据条件批量物理删除-->
+	<delete id="deleteByMap" parameterType="map">
+		DELETE FROM tips 
+		<include refid="Base_Where_Clause"/>
+	</delete>
+
+	<!-- 按照主键逻辑删除-->
+	<update id="logicDeleteByPrimaryKey" parameterType="java.lang.Integer">
+		UPDATE tips
+		set isDeleted = "Y"
+		WHERE
+		id=#{id}
+	</update>
+
+	<!-- 根据条件批量逻辑删除-->
+	<update id="logicDeleteByMap" parameterType="map">
+		UPDATE tips
+		set isDeleted = "Y"
+		<include refid="Base_Where_Clause"/>
+	</update>
+	
+	<!-- 添加-->
+	<insert id="insert" parameterType="cn.stephenchen.study.entity.Tips" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO tips
+			(id,name,content,createTime,modifyTime,createUser,modifyUser,isDeleted)
+		VALUES 
+			(#{id,jdbcType=INTEGER},#{name,jdbcType=VARCHAR},#{content,jdbcType=VARCHAR},#{createTime,jdbcType=TIMESTAMP},#{modifyTime,jdbcType=TIMESTAMP},#{createUser,jdbcType=INTEGER},#{modifyUser,jdbcType=INTEGER},#{isDeleted,jdbcType=VARCHAR})
+	</insert>
+
+	<!-- 批量添加-->
+	<insert id="batchInsert" parameterType="java.util.List">
+		INSERT INTO tips
+			(name,content,createTime,modifyTime,createUser,modifyUser,isDeleted)
+		VALUES 
+			<foreach item="record" index="index" collection="list" separator="," >
+				(#{record.name,jdbcType=VARCHAR},#{record.content,jdbcType=VARCHAR},#{record.createTime,jdbcType=TIMESTAMP},#{record.modifyTime,jdbcType=TIMESTAMP},#{record.createUser,jdbcType=INTEGER},#{record.modifyUser,jdbcType=INTEGER},#{record.isDeleted,jdbcType=VARCHAR})
+            </foreach>
+	</insert>
+	
+	<!-- 按填入值添加-->
+	<insert id="insertSelective" parameterType="cn.stephenchen.study.entity.Tips" useGeneratedKeys="true" keyProperty="id">
+	    insert into tips
+	    <trim prefix="(" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+				id,
+			</if>
+			<if test="name != null" >
+				name,
+			</if>
+			<if test="content != null" >
+				content,
+			</if>
+			<if test="createTime != null" >
+				createTime,
+			</if>
+			<if test="modifyTime != null" >
+				modifyTime,
+			</if>
+			<if test="createUser != null" >
+				createUser,
+			</if>
+			<if test="modifyUser != null" >
+				modifyUser,
+			</if>
+			<if test="isDeleted != null" >
+				isDeleted,
+			</if>
+		</trim>
+	    <trim prefix="values (" suffix=")" suffixOverrides="," >
+			<if test="id != null" >
+				#{id,jdbcType=INTEGER},
+			</if>
+			<if test="name != null" >
+				#{name,jdbcType=VARCHAR},
+			</if>
+			<if test="content != null" >
+				#{content,jdbcType=VARCHAR},
+			</if>
+			<if test="createTime != null" >
+				#{createTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="modifyTime != null" >
+				#{modifyTime,jdbcType=TIMESTAMP},
+			</if>
+			<if test="createUser != null" >
+				#{createUser,jdbcType=INTEGER},
+			</if>
+			<if test="modifyUser != null" >
+				#{modifyUser,jdbcType=INTEGER},
+			</if>
+			<if test="isDeleted != null" >
+				#{isDeleted,jdbcType=VARCHAR},
+			</if>
+		</trim>
+  	</insert>
+
+	
+  	<!-- 根据主键按有值更新-->
+  	<update id="updateByPrimaryKey" parameterType="cn.stephenchen.study.entity.Tips">
+		UPDATE tips
+		<set>
+			<if test="name != null ">
+				name=#{name,jdbcType=VARCHAR},				
+			</if>
+			<if test="content != null ">
+				content=#{content,jdbcType=VARCHAR},				
+			</if>
+			<if test="createTime != null ">
+				createTime=#{createTime,jdbcType=TIMESTAMP},				
+			</if>
+			<if test="modifyTime != null ">
+				modifyTime=#{modifyTime,jdbcType=TIMESTAMP},				
+			</if>
+			<if test="createUser != null ">
+				createUser=#{createUser,jdbcType=INTEGER},				
+			</if>
+			<if test="modifyUser != null ">
+				modifyUser=#{modifyUser,jdbcType=INTEGER},				
+			</if>
+			<if test="isDeleted != null ">
+				isDeleted=#{isDeleted,jdbcType=VARCHAR}				
+			</if>
+		</set>
+		WHERE
+		id=#{id}
+	</update>
+  	
+	<!-- 查询总数-->
+	<select id="countAll" resultType="int">
+    	select count(1) from tips
+		<include refid="Base_Where_Clause"/>    	
+    </select>
+    
+    <!-- 根据map查询总数-->
+	<select id="countByMap" resultType="int"  parameterType="java.util.Map">
+		select count(1) from tips
+		<include refid="Base_Where_Clause"/>
+	</select>
+	
+</mapper>
