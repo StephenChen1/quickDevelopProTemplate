@@ -1,4 +1,4 @@
-package cn.stephenchen.study.controller;
+package ${controllerpkg};
 
 import ${basepkg}.base.BaseController;
 import ${basepkg}.base.BaseService;

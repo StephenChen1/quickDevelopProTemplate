@@ -1,4 +1,4 @@
-package cn.stephenchen.study.dao;
+package ${daopkg};
 
 import cn.stephenchen.study.base.BaseDao;
 import $!{basepkg}.entity.$!{className};

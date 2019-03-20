@@ -1,4 +1,4 @@
-package cn.stephenchen.study.service;
+package ${servicepkg};
 
 import ${basepkg}.base.BaseDao;
 import ${basepkg}.base.BaseService;

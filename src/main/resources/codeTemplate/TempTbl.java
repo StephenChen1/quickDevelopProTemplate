@@ -1,4 +1,4 @@
-package cn.stephenchen.study.entity;
+package ${entitypkg};
 
 import cn.stephenchen.study.base.BaseEntity;
 import org.apache.commons.lang.builder.ToStringBuilder;
